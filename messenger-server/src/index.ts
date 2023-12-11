@@ -16,21 +16,23 @@ const validMessage = [
     .escape(),
 
     body("conversation_id")
-    .notEmpty().trim().escape(),
+    .notEmpty().isUUID(),
 
-    body("created_at")
-    .notEmpty()
-    .toDate(),
+    // body("created_at")
+    // .notEmpty()
+    // .withMessage("Invalid date type")
+    // .toDate(),
 
-    body("id")
-    .notEmpty().trim().escape(),
+    // body("id")
+    // .notEmpty().isUUID(),
 
-    body("updated_at")
-    .notEmpty()
-    .toDate(),
+    // body("updated_at")
+    // .notEmpty()
+    // .withMessage("Invalid date type")
+    // .toDate(),
 
     body("user_id")
-    .notEmpty().trim().escape(),
+    .notEmpty().isUUID(),
 ]
 
 app.get("/users", async (req, res, next) => {
@@ -64,19 +66,19 @@ app.post("/messages", validMessage, async (req: Request, res: Response, next: Ne
     if (result.isEmpty()) {
         console.log('Request Body:', req.body);
       try {
-        let newMessageToDB = await knex('messages').insert({
-          id: req.body.id,
+        let [insertedRow] = await knex('messages').insert({
           content: req.body.content,
-          created_at: req.body.created_at,
-          updated_at: req.body.updated_at,
           user_id: req.body.user_id,
           conversation_id: req.body.conversation_id
-        });
+        }).returning(['id', 'created_at', 'updated_at']);
         res.status(201).json({
+          id: insertedRow.id,
+          created_at: insertedRow.created_at,
+          updated_at: insertedRow.updated_at,
           success: true,
           message: "New message saved",
         });
-        console.log(newMessageToDB)
+        console.log(insertedRow)
       } catch (err) {
         let errReport = new Error("Could not post message to DB");
         next(errReport);
@@ -84,6 +86,54 @@ app.post("/messages", validMessage, async (req: Request, res: Response, next: Ne
     } else {
       res.status(500).send({ errors: result.array() });
     }
+});
+
+app.put(
+  "/messages/:id", param("id").isUUID(),
+  validMessage,
+  async (req: Request, res: Response, next: NextFunction) => {
+    const result = validationResult(req);
+    if (result.isEmpty()) {
+      console.log('Request Body:', req.body);
+      try {
+        let editedMessageDB = await knex('messages').where({id: req.params?.id})
+          .update(
+            {
+              id: req.body.id,
+              content: req.body.content,
+              created_at: req.body.created_at,
+              updated_at: req.body.updated_at,
+              user_id: req.body.user_id,
+              conversation_id: req.body.conversation_id
+            }
+          );
+          res.status(201).json({
+            success: true,
+            message: "Message was updated",
+          });
+          console.log(editedMessageDB)
+      } catch (err) {
+        let errReport = new Error("Could not edit message in a DB");
+        next(errReport);
+      }
+    } else {
+      res.status(500).send({ errors: result.array() });
+    }
+  }
+);
+
+app.delete("/messages/:id", param("id").isUUID(), async (req, res, next) => {
+  try {
+    let deletedMessageInDB = await knex('messages').where({id: req.params?.id}).del();
+      res.status(200).json({
+        success: true,
+        message: "Message was deleted.",
+      });
+      console.log(deletedMessageInDB)
+  } catch (err) {
+    let errReport = new Error("Could not delete message in a DB");
+    next(errReport);
+  }
 });
 
 app.get("/conversations", async (req, res, next) => {
