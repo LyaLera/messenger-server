@@ -48,21 +48,22 @@ app.get("/users", async (req, res, next) => {
       }
 });
 
-app.get("/messages", async (req, res, next) => {
-    try {
-        let messages = await knex('messages').select('*')
-        res.status(200).json(
-           messages
-        );
-      } catch (err) {
-        console.log(err);
-        let errReport = new Error("Could not get messeges from DB");
-        next(errReport);
-      }
-});
+// app.get("/messages", async (req, res, next) => {
+//     try {
+//         let messages = await knex('messages').select('*')
+//         res.status(200).json(
+//            messages
+//         );
+//       } catch (err) {
+//         console.log(err);
+//         let errReport = new Error("Could not get messeges from DB");
+//         next(errReport);
+//       }
+// });
 
 app.post("/messages", validMessage, async (req: Request, res: Response, next: NextFunction) => {
     const result = validationResult(req);
+    console.log(req.body)
     if (result.isEmpty()) {
         console.log('Request Body:', req.body);
       try {
@@ -70,14 +71,10 @@ app.post("/messages", validMessage, async (req: Request, res: Response, next: Ne
           content: req.body.content,
           user_id: req.body.user_id,
           conversation_id: req.body.conversation_id
-        }).returning(['id', 'created_at', 'updated_at']);
-        res.status(201).json({
-          id: insertedRow.id,
-          created_at: insertedRow.created_at,
-          updated_at: insertedRow.updated_at,
-          success: true,
-          message: "New message saved",
-        });
+        }).returning(['*']);
+        res.status(201).json(
+          insertedRow
+        );
         console.log(insertedRow)
       } catch (err) {
         let errReport = new Error("Could not post message to DB");
@@ -152,7 +149,7 @@ app.get("/conversations", async (req, res, next) => {
 app.get("/messages/conversation/:conversation_id", async (req, res, next) => {
     console.log(req.params)
     try {
-        let messages = await knex('messages').select('*').where('conversation_id',req.params.conversation_id)
+        let messages = await knex('messages').select('*').where('conversation_id',req.params.conversation_id).orderBy("created_at", "asc")
         res.status(200).json(
            messages
            
