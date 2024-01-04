@@ -22,6 +22,10 @@ const validMessage = [
     .notEmpty().isUUID(),
 ]
 
+app.get("/", (req, res) => {
+  res.send("Hello backend!")
+});
+
 app.get("/users", async (req, res, next) => {
     try {
         let users = await knex('users').select('*')
