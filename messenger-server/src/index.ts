@@ -2,10 +2,12 @@ import express, { Request, Response, NextFunction } from 'express';
 import knex from './db';
 import cors from 'cors'
 import { validationResult, body, param } from 'express-validator';
+import bodyParser from "body-parser";
 const app = express();
 const PORT = 3304;
 app.use(cors());
 app.use(express.json());
+app.use(bodyParser.json())
 
 const validMessage = [
     body("content")
