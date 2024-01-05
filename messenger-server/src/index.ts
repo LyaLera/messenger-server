@@ -5,6 +5,12 @@ import { validationResult, body, param } from 'express-validator';
 const app = express();
 const PORT = 3304;
 app.use(cors());
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  next();
+});
 app.use(express.json());
 
 const validMessage = [
